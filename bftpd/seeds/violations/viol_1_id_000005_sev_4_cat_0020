@@ -1,0 +1,121 @@
+=== PROTOCOL ORACLE VIOLATION REPORT ===
+Time: 1780004076
+Violations: 1
+Max Severity: 4
+Categories: 0x0020
+
+--- Violation 1 ---
+Severity: 4
+Category: 0x0020
+Description: FTP: CRLF injection in command arguments (FTP command smuggling)
+CVE Pattern: CVE-2026-39983
+Request Index: 47
+Pattern Hash: 0xaf009d18
+
+=== REQUEST DATA (122 bytes) ===
+RNFRfObuntu
+PAˇˇˇbuntu
+FEAT
+MKD çest
+CWD test
+MODE S
+PWD
+XMKD test
+XCWD testOPTS
+\PWD
+CDUP
+XCUP
+PWD
+QUIT
+
+
+=== RESPONSE DATA (1622 bytes) ===
+220 bftpd 6.1 at 127.0.0.1 ready.
+331 Password please.
+230 User logged in.
+215 UNIX Type: L8
+200 UTF8 ON
+503 Username already given.
+500 Unknown command: "c)SYS@AOSTECCTıRABOREIN,SMNTT4CCTıRAB"
+500 Unknown command: "RSFRfOO5"
+214-The following commands are recognized.
+214-USER
+214-PASS
+214-XPWD
+214-PWD
+214-TYPE
+214-PORT
+214-EPRT
+214-PASV
+214-EPSV
+214-ALLO
+214-STOR
+214-APPE
+214-RETR
+214-LIST
+214-NLST
+214-SYST
+214-MDTM
+214-XCWD
+214-CWD
+214-XCUP
+214-CDUP
+214-DELE
+214-XMKD
+214-MKD
+214-XRMD
+214-RMD
+214-NOOP
+214-OPTS
+214-RNFR
+214-RNTO
+214-REST
+214-SIZE
+214-QUIT
+214-HELP
+214-STAT
+214-SITE
+214-FEAT
+214-MGET
+214-MPUT
+214 End of help
+500 Unknown command: "TYS ubuntu˜˜˜˜˜"
+500 Unknown command: "STRUuRNF"
+500 Unknown command: "MODE SEˇˇT |1|127.0.0.1|2121|QUIT"
+500 Unknown command: ""
+500 Unknown command: "odeletenouAPPEZEujunPAS! ubuntu°°°°°°°°"
+257 "Eujuntu" has been created.
+503 Already logged in.
+500 Unknown command: "@EK<etenÄ uctuCCTıRABOREIN"
+229 Entering extended passive mode (|||40715|)
+500 Unknown command: "SÔOR2121"
+451 Error: No such file or directory.
+500 Unknown command: "PAˇˇˇbuntu"
+211-Extensions supported:
+ XPWD
+ EPRT
+ EPSV
+ ALLO
+ APPE
+ MDTM
+ XCWD
+ XCUP
+ XMKD
+ XRMD
+ REST
+ SIZE
+ FEAT
+ UTF8
+211 End
+257 "çest" has been created.
+451 Error: No such file or directory.
+500 Unknown command: "MODE S"
+257 "/" is the current working directory.
+257 "test" has been created.
+451 Error: No such file or directory.
+500 Unknown command: "\PWD"
+250 OK
+250 OK
+257 "/" is the current working directory.
+221 See you later...
+

@@ -1,0 +1,63 @@
+=== PROTOCOL ORACLE VIOLATION REPORT ===
+Time: 1780379887
+Violations: 1
+Max Severity: 3
+Categories: 0x0040
+
+--- Violation 1 ---
+Severity: 3
+Category: 0x0040
+Description: RTSP: Transport header with port=0 (potential DoS)
+CVE Pattern: CVE-2019-6256
+Request Index: 0
+Pattern Hash: 0x398e3932
+
+=== REQUEST DATA (395 bytes) ===
+SETUP rtsp://127.0.0.1:8554/aacAudioTest/track1 RTSP/1.0
+CSeq: 1
+User-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)
+Transport: RTP/AVP;multicast;client_port=000022B8001RTP/AVP;multicast;client_port=40000-40001
+
+
+SETUP rtsp://127.0.0.1:855/ac3AudioTest/trackX R ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)
+Transport: RTP/AVP;multicast;client_port=5000-5001
+
+
+=== RESPONSE DATA (1117 bytes) ===
+RTSP/1.0 404 Stream Not Found
+CSeq: 1
+Date: Tue, Jun 02 2026 05:58:07 GMT
+
+RTSP/1.0 400 Bad Request
+Date: Tue, Jun 02 2026 05:58:07 GMT
+Allow: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER
+
+RTSP/1.0 405 Method Not Allowed
+CSeq: 4
+Date: Tue, Jun 02 2026 05:58:07 GMT
+Allow: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER
+
+RTSP/1.0 405 Method Not Allowed
+CSeq: 11
+Date: Tue, Jun 02 2026 05:58:07 GMT
+Allow: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER
+
+RTSP/1.0 405 Method Not Allowed
+CSeq: 7
+Date: Tue, Jun 02 2026 05:58:07 GMT
+Allow: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER
+
+RTSP/1.0 210 OK
+CSeq: 2
+Date: Tue, Jun 02 2026 05:58:07 GMT
+Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER
+
+RTSP/1.0 454 Session Not Found
+CSeq: 11
+Date: Tue, Jun 02 2026 05:58:07 GMT
+
+RTSP/1.0 400 Bad Request
+Date: Tue, Jun 02 2026 05:58:07 GMT
+Allow: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER
+
+

@@ -1,0 +1,59 @@
+=== PROTOCOL ORACLE VIOLATION REPORT ===
+Time: 1780101406
+Violations: 2
+Max Severity: 3
+Categories: 0x0108
+
+--- Violation 1 ---
+Severity: 2
+Category: 0x0008
+Description: FTP: Internal path or version info leaked in response
+Request Index: -1
+Pattern Hash: 0x792cbe6a
+
+--- Violation 2 ---
+Severity: 3
+Category: 0x0100
+Description: FTP: PORT command specifies private/internal address (FTP bounce risk)
+CVE Pattern: CVE-2018-15516
+Request Index: 7
+Pattern Hash: 0x1d96bfd5
+
+=== REQUEST DATA (63 bytes) ===
+PASS ubuntu
+PASS ubuntu
+SYST
+STRG F
+MKD todeltttttttttT
+
+
+=== RESPONSE DATA (1095 bytes) ===
+220 ProFTPD Server (ProFTPD Default Installation) [127.0.0.1]
+331 Password required for ubuntu
+230 User ubuntu logged in
+503 You are already logged in
+215 UNIX Type: L8
+500 STRG not understood
+257 "/home/ubuntu/todeltttttttttT" - Directory successfully created
+500 Invalid command: try being more creative
+200 PORT command successful
+522 Network protocol not supported, use (1)
+425 Unable to build data connection: Connection refused
+250-Start of list for /
+ modify=20260529195154;perm=fle;type=dir;unique=3CU16C0168;UNIX.group=0;UNIX.groupname=ubuntu;UNIX.mode=0755;UNIX.owner=0;UNIX.ownername=ubuntu; /
+250 End of list
+200 MLST OPTS type;size;modify;perm;
+500 S not understood
+211-Status of 'ProFTPD Default Installation'
+ Connected from localhost (127.0.0.1)
+ Logged in as ubuntu
+ TYPE: ASCII, STRUcture: File, Mode: Stream
+ No data connection
+211 End of status
+350 File or directory exists, ready for destination name
+501 Bad sequence of commands
+501 Bad sequence of commands
+501 Bad sequence of commands
+221 Goodbye.
+500 Invalid command: try being more creative
+

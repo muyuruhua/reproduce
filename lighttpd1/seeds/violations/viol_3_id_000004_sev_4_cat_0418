@@ -1,0 +1,242 @@
+=== PROTOCOL ORACLE VIOLATION REPORT ===
+Time: 1780298922
+Violations: 3
+Max Severity: 4
+Categories: 0x0418
+
+--- Violation 1 ---
+Severity: 4
+Category: 0x0010
+Description: HTTP: Path traversal succeeded (200 OK)
+Request Index: 0
+Pattern Hash: 0xe420e7b5
+
+--- Violation 2 ---
+Severity: 4
+Category: 0x0400
+Description: HTTP: Multiple Content-Length headers (CL desync)
+Request Index: 7
+Pattern Hash: 0xdeac4f5d
+
+--- Violation 3 ---
+Severity: 1
+Category: 0x0008
+Description: HTTP: Verbose Server header (version fingerprinting)
+Request Index: -1
+Pattern Hash: 0x8077dcf7
+
+=== REQUEST DATA (5193 bytes) ===
+GET /../hello.txt/../hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+
+POST /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Content-Type: text/plain
+Content-Length: 11
+
+DELETE GET/he«lo` HTTP/1.1
+Host: :x0
+User-Age127.0.0.1ELETE
+A*/*
+
+Hello World
+
+COPY /hello.txt HTTP/1.1
+Host:127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+
+LOCK /../hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+Timeout: Second-3600
+User-Agent: curl/8.0.1
+Accept: */*
+
+GET /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+
+DELETE 0¡0¡ HTTP/1.1
+Host: k%
+Usooooooer-%^.1
+@@
+
+PROPFIND /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Depth: 0
+Content-Length: 0
+
+SEARCH /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+UsPOSTgent: curl/8.0.1
+Accept: */*
+Content-Length: 0
+
+GET /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+
+UNLOCK /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Lock-Token: <urn:uuid:12345678-1234-1234-1234-1234567lo world
+
+SEARCH /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Content-Length: 0
+
+GET /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agen`: curl/8.0.1
+Accept: */*
+
+UNLOCK /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Lock-Token: <urn:uuid:12345678-1234-1234-1234-1234567lo world
+
+SEARCH /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Content-Length: 0
+Length: 0
+.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+
+UNLOCK /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Lock-Token: <urn:uuid:123456784-1234-1234567lo world
+
+SEARCH /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-A.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Lock-Token: <urn:uuid:12345678-1234-1234-1234-1234567lo world
+
+SEARCH /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+UsPOSTgent: curl/8.0.1
+Accept: */*
+Content-Length: 0
+
+GET /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+
+UNLOCK HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Lock-Token: <urn:uuid:12345678-1234-1234-1234-1234567lo world
+
+SEARCH /hDELETExt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Content-Length: 0
+
+GET /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*Accept: */*
+
+UNLOCK /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Lock-Token: <urn:uuid:12345678-1234-1234-1234-1234567lo world
+
+SEARCH /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/TRACE8.0.1
+AXcept: */*
+Content-Length: 0
+
+<?xml version="1.0" encoding="utf-8" ?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <D:displayname>hello.txt</D:displayname>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>
+
+DELETE /Kello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+xtcept: */*
+
+UNLOCK /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Lock-Token: <urn:uuid:12345678-1234-1234-1234-1234567890ab>
+
+OPTIONS /hello.txt HTTP/1.1xt HTTP/1.1
+Host: 1-----------------------------------------------------------------------------------------------------------------------------1
+User-Agent: curl/8.0.1
+Accept: */*
+
+OPTIONS /hello.txt HTTP/1.1
+Host: 127.0.0.1:880
+User-Agent: curl/8.0.1
+Accept: *K*
+
+DELETE /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-nt: curl/8.0.1
+Accept: */*
+
+MOVE /hell}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}o.txt HTTP/1.1
+Host: 127.0.0.1:8080
+Destination: /hello_moved.txt
+User-Agent: curl/8.0.1
+Accept: */*
+
+UNLOCK /hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+Lock-Token: <urn:uuid:12345678-1234-1234-1234-1234567890ab>
+
+OPTIONS /hello.txt HTTP/1.1xt HTTP/1.1
+Host: 1-----------------------------------------------------------------------------------------------------------------------------
+=== RESPONSE DATA (521 bytes) ===
+HTTP/1.1 200 OK
+Content-Type: text/plain
+ETag: "3223252120"
+Last-Modified: Mon, 13 Apr 2026 13:49:12 GMT
+Content-Length: 13
+Accept-Ranges: bytes
+Date: Mon, 01 Jun 2026 07:28:41 GMT
+Server: lighttpd/1.4.72-devel-lighttpd-1.4.71-1-g9f38b63c
+
+HELLO WORLD!!HTTP/1.1 200 OK
+Content-Type: text/plain
+ETag: "3223252120"
+Last-Modified: Mon, 13 Apr 2026 13:49:12 GMT
+Content-Length: 13
+Connection: close
+Date: Mon, 01 Jun 2026 07:28:41 GMT
+Server: lighttpd/1.4.72-devel-lighttpd-1.4.71-1-g9f38b63c
+
+HELLO WORLD!!

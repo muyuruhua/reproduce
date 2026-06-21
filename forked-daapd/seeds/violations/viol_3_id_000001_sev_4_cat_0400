@@ -1,0 +1,194 @@
+=== PROTOCOL ORACLE VIOLATION REPORT ===
+Time: 1780344250
+Violations: 1
+Max Severity: 4
+Categories: 0x0400
+
+--- Violation 1 ---
+Severity: 4
+Category: 0x0400
+Description: HTTP: Multiple Content-Length headers (CL desync)
+Request Index: 29
+Pattern Hash: 0xdeac4f5d
+
+=== REQUEST DATA (4830 bytes) ===
+OPTIONS /api/config HTTP/1.1
+Host: tlhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FDavid+Hilowitz HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FDavid+Hilowitz%2FGradual+Sunrise HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+POST /api/queue/items/add?uris=library:track:6&position=0 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/queue HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FDavid+Hilowitz HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FMild_Wild HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FMild_Wild%2Fa_Line_Spacing_b_Say_Goodnight HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+POST /api/queue/items/add?uris=library:track:5&position=0 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/queue HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FMild_Wild HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+POST /api/queue/items/add?expression=path+starts+with+%22%2Ftmp%2FMP3%2FMild_Wild%2FParticular_PacePrimary_Colors%22+order+by+path+asc HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FMild_Wild%2Fa_Line_Spacing_b_Say_Goodnight HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/queue HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FMild_Wild HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FScott+Holmes HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FScott+Holmes%2FUpbeat+Party HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+POST /api/queue/items/add?uris=library:track:1&position=0 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/queue HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FScott+Holmes HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FScott+Holmes%2FStorybook HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+POST /api/queue/items/add?uris=library:track:2&shuffle=false&clear=true&playback=start&playback_from_position=0 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/player HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3%2FScott+Holmes HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/library/files?directory=%2Ftmp%2FMP3 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+PUT /api/player/volume?volume=13 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0öööööööööööööööööööööööööööööööööööööööööööst:3689
+Content-Length: 0
+
+PATCH /api/player/volume?volume=42 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+PUT /api/player/volume?volume=84 HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/player HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+PUT /api/player/consume?state=true HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/player HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+PATCH /api/player/consume?state=false HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+PUT /api/player/consume?state=false HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/player HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/player HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+PUT /api/player/shuffle?state=false HTTP/1.1
+Host: localhost:3689
+Content-Length: 0
+
+GET /api/player HTTP/1.1
+Host: localhost:3689
+Content-
+=== RESPONSE DATA (401 bytes) ===
+HTTP/1.1 302 Moved
+Location: /admin.html
+Access-Control-Allow-Origin: *
+Date: Mon, 01 Jun 2026 20:04:10 GMT
+Content-Length: 0
+Content-Type: text/html; charset=ISO-8859-1
+
+HTTP/1.1 400 Bad Request
+Content-Type: text/html
+Connection: close
+Date: Mon, 01 Jun 2026 20:04:10 GMT
+Content-Length: 94
+
+<HTML><HEAD>
+<TITLE>400 Bad Request</TITLE>
+</HEAD><BODY>
+<H1>Bad Request</H1>
+</BODY></HTML>
+

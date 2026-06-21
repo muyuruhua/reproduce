@@ -1,0 +1,105 @@
+=== PROTOCOL ORACLE VIOLATION REPORT ===
+Time: 1780225500
+Violations: 3
+Max Severity: 4
+Categories: 0x0024
+
+--- Violation 1 ---
+Severity: 3
+Category: 0x0004
+Description: FTP: RNTO without prior RNFR accepted by server
+Request Index: 53
+Pattern Hash: 0x81328406
+
+--- Violation 2 ---
+Severity: 4
+Category: 0x0020
+Description: FTP: CRLF injection in command arguments (FTP command smuggling)
+CVE Pattern: CVE-2026-39983
+Request Index: 38
+Pattern Hash: 0xaf009d18
+
+--- Violation 3 ---
+Severity: 4
+Category: 0x0020
+Description: FTP: CRLF injection in command arguments (FTP command smuggling)
+CVE Pattern: CVE-2026-39983
+Request Index: 51
+Pattern Hash: 0xaf009d18
+
+=== REQUEST DATA (117 bytes) ===
+SfER ubunau
+PX
+QUIT(
+PASS 
+MLFL testfil
+h ,
+PwPASVDnony
+SITE ëbunäu1,1tQUITa1,132,
+(
+PASS 
+MLFL testfil
+
+
+=== RESPONSE DATA (2237 bytes) ===
+220 LightFTP server ready
+331 User anonymous OK. Password required
+230 User logged in, proceed.
+500 Syntax error, command unrecognized.
+500 Syntax error, command unrecognized.
+230 User logged in, proceed.
+214-The following commands are recognized.
+ ABOR APPE AUTH CDUP CWD  DELE EPSV FEAT HELP LIST MKD MLSD NOOP OPTS
+ PASS PASV PBSZ PORT PROT PWD  QUIT REST RETR RMD RNFR RNTO SITE SIZE
+ STOR SYST TYPE USER
+214 Help OK.
+500 Syntax error, command unrecognized.
+230 User logged in, proceed.
+257 "/" is a current directory.
+200 Type set to I.
+501 Syntax error in parameters or arguments.
+230 User logged in, proceed.
+500 Syntax error, command unrecognized.
+500 Syntax error, command unrecognized.
+500 Syntax error, command unrecognized.
+230 User logged in, proceed.
+500 Syntax error, command unrecognized.
+230 User logged in, proceed.
+230 User logged in, proceed.
+500 Syntax error, command unrecognized.
+230 User logged in, proceed.
+230 User logged in, proceed.
+350 REST supported. Ready to resume at byte offset 0
+331 User ano££££∆û££PASS mbuntubbuMtu OK. Password required
+530 Please login with USER and PASS.
+500 Syntax error, command unrecognized.
+500 Syntax error, command unrecognized.
+530 Invalid user name or password.
+530 Please login with USER and PASS.
+530 Invalid user name or password.
+530 Please login with USER and PASS.
+530 Please login with USER and PASS.
+331 User anonymo OK. Password required
+530 Invalid user name or password.
+530 Please login with USER and PASS.
+331 User anonymo OK. Password required
+530 Invalid user name or password.
+500 Syntax error, command unrecognized.
+530 Invalid user name or password.
+530 Invalid user name or password.
+215 UNIX Type: L8
+500 Syntax error, command unrecognized.
+500 Syntax error, command unrecognized.
+530 Invalid user name or password.
+215 UNIX Type: L8
+500 Syntax error, command unrecognized.
+500 Syntax error, command unrecognized.
+501 Syntax error in parameters or arguments.
+500 Syntax error, command unrecognized.
+501 Syntax error in parameters or arguments.
+530 Invalid user name or password.
+530 Invalid user name or password.
+530 Please login with USER and PASS.
+530 Please login with USER and PASS.
+221 
+

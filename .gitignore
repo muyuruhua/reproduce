@@ -1,0 +1,8 @@
+# Raw research data (1.4GB) — 审核人员可从 ChatAFL-master 原始项目获取
+ten_groups_data_ten/
+
+# Temporary files
+*.swp
+*.swo
+*~
+.DS_Store

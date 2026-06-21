@@ -1,0 +1,67 @@
+=== PROTOCOL ORACLE VIOLATION REPORT ===
+Time: 1780302123
+Violations: 2
+Max Severity: 4
+Categories: 0x0018
+
+--- Violation 1 ---
+Severity: 4
+Category: 0x0010
+Description: HTTP: Path traversal succeeded (200 OK)
+Request Index: 1
+Pattern Hash: 0xe420e7b5
+
+--- Violation 2 ---
+Severity: 1
+Category: 0x0008
+Description: HTTP: Verbose Server header (version fingerprinting)
+Request Index: -1
+Pattern Hash: 0x8077dcf7
+
+=== REQUEST DATA (177 bytes) ===
+OPTIONS /hello.txt HTTP/1.1
+Host: User-Agent10
+User-Agent: curl/8.0.1
+Accept: */*
+
+GET /../hello.txt HTTP/1.1
+Host: 127.0.0.1:8080
+User-Agent: curl/8.0.1
+Accept: */*
+
+
+=== RESPONSE DATA (963 bytes) ===
+HTTP/1.1 200 OK
+Allow: OPTIONS, GET, HEAD, POST
+Content-Length: 0
+Date: Mon, 01 Jun 2026 08:22:02 GMT
+Server: lighttpd/1.4.72-devel-lighttpd-1.4.71-1-g9f38b63c
+
+HTTP/1.1 200 OK
+Content-Type: text/plain
+ETag: "3223252120"
+Last-Modified: Mon, 13 Apr 2026 13:49:12 GMT
+Content-Length: 13
+Accept-Ranges: bytes
+Date: Mon, 01 Jun 2026 08:22:02 GMT
+Server: lighttpd/1.4.72-devel-lighttpd-1.4.71-1-g9f38b63c
+
+HELLO WORLD!!HTTP/1.1 400 Bad Request
+Content-Type: text/html
+Content-Length: 345
+Connection: close
+Date: Mon, 01 Jun 2026 08:22:02 GMT
+Server: lighttpd/1.4.72-devel-lighttpd-1.4.71-1-g9f38b63c
+
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+ <head>
+  <title>400 Bad Request</title>
+ </head>
+ <body>
+  <h1>400 Bad Request</h1>
+ </body>
+</html>
+
