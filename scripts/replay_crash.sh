@@ -154,9 +154,10 @@ docker run --rm --network host --cap-add SYS_PTRACE \
         "${CMD[$TARGET]}" \
         "${HC[$TARGET]}" \
         "$REPLAYS" \
+        "$(basename "$CRASH_SEED")" \
     2>&1 | tee "$REPLAY_LOG"
 
-if grep -aq "CRASH_DETECTED\|CRASH DETECTED" "$REPLAY_LOG" 2>/dev/null; then
+if grep -aq "CRASH_DETECTED\|CRASH REPRODUCED\|CRASH_DETECTED" "$REPLAY_LOG" 2>/dev/null; then
     CRASH_FOUND=1
 fi
 
