@@ -257,10 +257,10 @@ else
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    CONFIRMED_LINES=$(find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -ali "confirmed" {} \; 2>/dev/null | wc -l)
+    CONFIRMED_LINES=$(find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -ali "[1-9][0-9]* violation(s) confirmed" {} \; 2>/dev/null | wc -l)
     if [ "$CONFIRMED_LINES" -gt 0 ] 2>/dev/null; then
         echo "  ✅ VIOLATION CONFIRMED — 逻辑漏洞已独立复现!"
-        find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -aH "Confirmed\|violation(s) confirmed\|Severity\|CWE\|Description" {} \; 2>/dev/null | head -30
+        find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -aH "Severity\|CWE\|Description" {} \; 2>/dev/null | head -30
         echo ""
         echo "  判定: 安全属性已被破坏 (详见上方 CWE/CVE 标签)"
     else
