@@ -15,9 +15,9 @@ declare -A IMG PROTO PORT WD CMD PRE ENV UDP HC
 IMG[kamailio]="kamailio";        PROTO[kamailio]="SIP";   PORT[kamailio]="5060"
 WD[kamailio]="/home/ubuntu/experiments/kamailio"
 CMD[kamailio]="./src/kamailio -f /home/ubuntu/experiments/kamailio-basic.cfg -L src/modules -Y runtime_dir -n 1 -D -E"
-PRE[kamailio]='mkdir -p runtime_dir; killall kamailio 2>/dev/null || true; killall pjsua-x86_64-unknown-linux-gnu 2>/dev/null || true; /home/ubuntu/experiments/pjproject/pjsip-apps/bin/pjsua-x86_64-unknown-linux-gnu --local-port=5068 --id sip:33@127.0.0.1 --registrar sip:127.0.0.1 --proxy sip:127.0.0.1 --realm "*" --username 33 --password 33 --auto-answer 200 --auto-play --play-file /home/ubuntu/experiments/StarWars3.wav --auto-play-hangup --duration=300 --use-cli --no-cli-console --cli-telnet-port=34254 >/dev/null 2>&1 &'
+PRE[kamailio]='mkdir -p runtime_dir; killall kamailio 2>/dev/null || true; killall pjsua-x86_64-unknown-linux-gnu 2>/dev/null || true; /home/ubuntu/experiments/pjproject/pjsip-apps/bin/pjsua-x86_64-unknown-linux-gnu --local-port=5068 --id sip:33@127.0.0.1 --registrar sip:127.0.0.1 --proxy sip:127.0.0.1 --realm "*" --username 33 --password 33 --auto-answer 200 --auto-play --play-file /home/ubuntu/experiments/StarWars3.wav --auto-play-hangup --duration=300 --use-cli --no-cli-console --cli-telnet-port=34254 >/dev/null 2>&1 & sleep 5; pgrep pjsua >/dev/null 2>&1'
 ENV[kamailio]="ASAN_OPTIONS=abort_on_error=1:symbolize=0:detect_leaks=0:detect_stack_use_after_return=1 KAMAILIO_MODULES=src/modules KAMAILIO_RUNTIME_DIR=runtime_dir"
-UDP[kamailio]="1";              HC[kamailio]="echo >/dev/udp/127.0.0.1/5060 2>/dev/null || true"
+UDP[kamailio]="1";              HC[kamailio]="echo >/dev/udp/127.0.0.1/5060 2>/dev/null"
 
 IMG[exim]="exim";                PROTO[exim]="SMTP";   PORT[exim]="25"
 WD[exim]="/home/ubuntu/experiments/exim"
@@ -70,10 +70,10 @@ UDP[lighttpd1]="0";              HC[lighttpd1]="nc -z 127.0.0.1 8080"
 
 IMG[forked-daapd]="forked-daapd"; PROTO[forked-daapd]="HTTP"; PORT[forked-daapd]="3689"
 WD[forked-daapd]="/home/ubuntu/experiments"
-CMD[forked-daapd]="sudo service dbus start 2>/dev/null; sudo service avahi-daemon start 2>/dev/null; HOME=/home/ubuntu ./forked-daapd/src/forked-daapd -d 0 -c /home/ubuntu/experiments/forked-daapd.conf -f"
-PRE[forked-daapd]=""
+CMD[forked-daapd]="HOME=/home/ubuntu ./forked-daapd/src/forked-daapd -d 0 -c /home/ubuntu/experiments/forked-daapd.conf -f"
+PRE[forked-daapd]="kill \$(pgrep forked-daapd) 2>/dev/null || true; sudo service dbus start 2>/dev/null || true; sudo service avahi-daemon start 2>/dev/null || true; sleep 5; pgrep avahi-daemon >/dev/null 2>&1"
 ENV[forked-daapd]="ASAN_OPTIONS=abort_on_error=1:symbolize=0:detect_leaks=0"
-UDP[forked-daapd]="0";           HC[forked-daapd]="nc -z 127.0.0.1 3689"
+UDP[forked-daapd]="0";           HC[forked-daapd]="for i in \$(seq 1 40); do nc -z 127.0.0.1 3689 2>/dev/null && break; sleep 1; done; nc -z 127.0.0.1 3689 2>/dev/null"
 
 IMG[mosquitto-v2.0.18]="mosquitto-v2.0.18"; PROTO[mosquitto-v2.0.18]="MQTT"; PORT[mosquitto-v2.0.18]="1883"
 WD[mosquitto-v2.0.18]="/home/ubuntu/experiments"
@@ -133,6 +133,14 @@ INTERNAL_SCRIPT="$OUT_DIR/_crash_replay.sh"
 cp "$(dirname "$0")/_crash_replay_persistent.sh" "$INTERNAL_SCRIPT"
 chmod +x "$INTERNAL_SCRIPT"
 
+# Per-target replay count — complex crashes need more iterations
+case "$TARGET" in
+    kamailio) REPLAYS=50 ;;       # SIP UDP race condition needs many tries
+    forked-daapd) REPLAYS=50 ;;   # multi-process HTTP server
+    proftpd|live555) REPLAYS=5 ;;
+    *) REPLAYS=5 ;;
+esac
+
 docker run --rm --network host --cap-add SYS_PTRACE \
     -v "$(realpath "$SAFE_COPY"):/tmp/crash_seed:ro" \
     -v "$(realpath "$INTERNAL_SCRIPT"):/tmp/_replay.sh:ro" \
@@ -145,6 +153,7 @@ docker run --rm --network host --cap-add SYS_PTRACE \
         "${PRE[$TARGET]}" \
         "${CMD[$TARGET]}" \
         "${HC[$TARGET]}" \
+        "$REPLAYS" \
     2>&1 | tee "$REPLAY_LOG"
 
 if grep -aq "CRASH_DETECTED\|CRASH DETECTED" "$REPLAY_LOG" 2>/dev/null; then
