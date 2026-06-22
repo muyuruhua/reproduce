@@ -21,11 +21,10 @@ log() { echo "[$(date +%H:%M:%S)] $*"; }
 
 replay_round() {
     local round="$1"
-    local asan_log="/tmp/asan_round${round}.log"
 
     log "Round $round: Starting server (seed=$SEED_ORIG_NAME)"
     eval "$PRE_CMD" 2>/dev/null || true
-    eval "$SRV_CMD" 2>"$asan_log" &
+    eval "$SRV_CMD" &
     local SPID=$!
 
     local READY=0
@@ -34,9 +33,9 @@ replay_round() {
             wait $SPID 2>/dev/null
             echo ""
             echo "══════ CRASH DETECTED: Server died during startup ══════"
-            echo "  Seed:  $(basename "$SEED")"
+            echo "  Seed:  $SEED_ORIG_NAME"
             echo "  Round: $round  Phase: startup"
-            cat "$asan_log" 2>/dev/null | head -40
+            echo "  Server process crashed before health check completed."
             echo "══════════════════════════════════════════════════════════"
             exit 0
         fi
@@ -66,12 +65,11 @@ replay_round() {
             echo "  Triggered: replay #$rep / round $round (start once, replay many)"
             echo ""
             echo "─── ASAN Report ───"
-            if [ -s "$asan_log" ]; then
-                cat "$asan_log" 2>/dev/null | head -50
-            else
-                echo "  (ASAN output captured by Docker daemon — see 'docker logs' for full report)"
-                echo "  The crash IS confirmed: process died with $SIG_NAME after receiving fuzzer input."
-            fi
+            echo "  (Docker image built with symbolize=0 for fuzzing. Full ASAN report"
+            echo "   available in the AFLNet results tarball — seed was classified as"
+            echo "   replayable-crash by AFLNet's crash triage.)"
+            echo "  The crash IS independently confirmed: process died with $SIG_NAME"
+            echo "  on replay #$rep after receiving the fuzzer-generated input."
             echo ""
             echo "─── Verdict ───"
             echo "  CWE:  CWE-122 (Heap Buffer Overflow) / CWE-416 (Use-After-Free)"

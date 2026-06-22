@@ -123,7 +123,7 @@ print(f'Total: {mi} messages')
 # Uses dual-mode persistent+restart replay script mounted into container.
 # This avoids complex heredoc escaping issues.
 
-echo ""; echo "--- Replaying via aflnet-replay (persistent + restart, 256 total attempts) ---"
+echo ""; echo "--- Persistent crash replay (2 rounds, server kept alive between replays) ---"
 
 REPLAY_LOG="$OUT_DIR/replay.log"
 CRASH_FOUND=0
