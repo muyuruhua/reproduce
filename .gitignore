@@ -6,3 +6,4 @@ ten_groups_data_ten/
 *.swo
 *~
 .DS_Store
+__pycache__/
