@@ -13,9 +13,10 @@
 # ==============================================================================
 # set -euo pipefail  # disabled: grep may return empty
 
-TARGET="${1:?Usage: $0 <target> <crash|viol> [category_hex]}"
-VTYPE="${2:?Usage: $0 <target> <crash|viol> [category_hex]}"
+TARGET="${1:?Usage: $0 <target> <crash|viol> [category_hex_or_seed_id]}"
+VTYPE="${2:?Usage: $0 <target> <crash|viol> [category_hex_or_seed_id]}"
 CAT_HEX="${3:-any}"
+# crash: CAT_HEX=seed_id (e.g. "000009") or "any" for random pick
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPRO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -117,10 +118,21 @@ for TAR in $(ls -v "$RESULTS_DIR"/out-*-chatafl_opt_*.tar.gz 2>/dev/null); do
     TAR_NAME=$(basename "$TAR")
 
     if [ "$VTYPE" = "crash" ]; then
-        MATCH=$(tar tzf "$TAR" 2>/dev/null | grep "replayable-crashes/" | grep -v "README\|/$" | head -1)
-        if [ -n "$MATCH" ]; then
-            FOUND=$((FOUND+1))
-            [ $FOUND -eq 1 ] && { SELECTED_TAR="$TAR"; SELECTED_SEED="$MATCH"; }
+        # If a seed ID is specified (e.g. "000009"), search for that exact one
+        if [ "$CAT_HEX" != "any" ]; then
+            MATCH=$(tar tzf "$TAR" 2>/dev/null | grep "replayable-crashes/" | grep -v "README\|/$" | grep "id:${CAT_HEX}" | head -1)
+            if [ -n "$MATCH" ]; then
+                FOUND=$((FOUND+1))
+                SELECTED_TAR="$TAR"; SELECTED_SEED="$MATCH"
+                echo "  [指定种子] $TAR_NAME → $MATCH"
+            fi
+        else
+            # Random pick from this tarball
+            MATCH=$(tar tzf "$TAR" 2>/dev/null | grep "replayable-crashes/" | grep -v "README\|/$" | shuf -n1)
+            if [ -n "$MATCH" ]; then
+                FOUND=$((FOUND+1))
+                [ $FOUND -eq 1 ] && { SELECTED_TAR="$TAR"; SELECTED_SEED="$MATCH"; }
+            fi
         fi
         continue
     fi
