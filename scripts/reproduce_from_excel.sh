@@ -143,10 +143,10 @@ for TAR in $(ls -v "$RESULTS_DIR"/out-*-chatafl_opt_*.tar.gz 2>/dev/null); do
             continue
         fi
 
-        # Exact match: highest priority
+        # Exact match: highest priority (keep FIRST match = earliest tarball = best quality)
         if [ "$(echo "$seed_cat" | tr 'a-f' 'A-F')" = "$(echo "$CAT_NUM" | tr 'a-f' 'A-F')" ]; then
             FOUND=$((FOUND+1))
-            SELECTED_TAR="$TAR"; SELECTED_SEED="$line"; BEST_SCORE=999
+            [ $FOUND -eq 1 ] && { SELECTED_TAR="$TAR"; SELECTED_SEED="$line"; BEST_SCORE=999; }
             echo "  [精确匹配] $TAR_NAME → $line"
             continue
         fi
@@ -221,13 +221,13 @@ if [ "$VTYPE" = "crash" ]; then
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    if grep -q "CRASH DETECTED\|CRASH CONFIRMED" "$OUT_DIR/replay_output/replay.log" 2>/dev/null; then
+    if grep -aq "CRASH DETECTED\|CRASH CONFIRMED" "$OUT_DIR/replay_output/replay.log" 2>/dev/null; then
         echo "  ✅ CRASH REPRODUCED — 内存破坏漏洞已独立复现!"
-        grep "CRASH DETECTED\|AddressSanitizer" "$OUT_DIR/replay_output/replay.log" | head -5
+        grep -a "CRASH DETECTED\|AddressSanitizer" "$OUT_DIR/replay_output/replay.log" | head -5
         echo ""
         echo "  判定: CWE-122/416 — CVSS 7.5-9.8 (远程触发,无需认证)"
-    elif grep -q "Not reproduced" "$OUT_DIR/replay_output/replay.log" 2>/dev/null || \
-         grep -q "survived" "$OUT_DIR/replay_output/replay.log" 2>/dev/null; then
+    elif grep -aq "Not reproduced" "$OUT_DIR/replay_output/replay.log" 2>/dev/null || \
+         grep -aq "survived" "$OUT_DIR/replay_output/replay.log" 2>/dev/null; then
         if [ "$TARGET" = "live555" ] || [ "$TARGET" = "forked-daapd" ]; then
             echo "  ⚠ 未在Docker standalone中复现。"
             echo "    原因: 此类UAF/堆破坏依赖AFL persistent-mode fork-server堆状态。"
@@ -245,10 +245,10 @@ else
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    CONFIRMED_LINES=$(find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -li "confirmed" {} \; 2>/dev/null | wc -l)
+    CONFIRMED_LINES=$(find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -ali "confirmed" {} \; 2>/dev/null | wc -l)
     if [ "$CONFIRMED_LINES" -gt 0 ] 2>/dev/null; then
         echo "  ✅ VIOLATION CONFIRMED — 逻辑漏洞已独立复现!"
-        find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -H "Confirmed\|violation(s) confirmed\|Severity\|CWE\|Description" {} \; 2>/dev/null | head -30
+        find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -aH "Confirmed\|violation(s) confirmed\|Severity\|CWE\|Description" {} \; 2>/dev/null | head -30
         echo ""
         echo "  判定: 安全属性已被破坏 (详见上方 CWE/CVE 标签)"
     else
