@@ -72,12 +72,6 @@ echo -e "${YELLOW}[Step 2/3] 开始复现漏洞...${NC}"
 echo "  输出目录: $OUT_BASE"
 mkdir -p "$OUT_BASE"
 
-declare -A TARGET_PROTO=(
-    [lightftp]="FTP"      [bftpd]="FTP"       [proftpd]="FTP"
-    [pure-ftpd]="FTP"     [exim]="SMTP"       [live555]="RTSP"
-    [kamailio]="SIP"      [forked-daapd]="DAAP" [lighttpd1]="HTTP"
-    [mosquitto-v2.0.18]="MQTT"
-)
 
 declare -A HAS_CRASH=(
     [bftpd]=1 [kamailio]=1 [proftpd]=1 [live555]=1 [forked-daapd]=1
@@ -110,10 +104,10 @@ for target in "${IMAGES[@]}"; do
             echo -n "  Crash #$((i+1)): $(basename "$seed" | cut -c1-60)... "
             bash "$SCRIPT_DIR/scripts/replay_crash.sh" "$target" "$seed" "$OUT" >/dev/null 2>&1
 
-            if grep -q "CRASH DETECTED" "$OUT/replay.log" 2>/dev/null; then
+            if grep -aq "CRASH DETECTED" "$OUT/replay.log" 2>/dev/null; then
                 CRASH_CONFIRMED=$((CRASH_CONFIRMED+1))
                 echo -e "${RED}✗ CRASH REPRODUCED ✓${NC}"
-                grep "CRASH DETECTED\|AddressSanitizer" "$OUT/replay.log" | head -2 | while read l; do echo "    $l"; done
+                grep -a "CRASH DETECTED\|AddressSanitizer" "$OUT/replay.log" | head -2 | while read l; do echo "    $l"; done
             else
                 echo -e "${YELLOW}○ not reproduced${NC}"
             fi
@@ -137,10 +131,12 @@ for target in "${IMAGES[@]}"; do
             echo -n "  Viol #$((i+1)): $(basename "$seed" | cut -c1-60)... "
             bash "$SCRIPT_DIR/scripts/replay_logical_vuln.sh" "$target" "$seed" "$OUT" >/dev/null 2>&1
 
-            if grep -qi "Confirmed" "$OUT/$SAFE/verdict.txt" 2>/dev/null; then
+            # Find the actual verdict file (nested under safe_vname dir)
+            VERDICT_FILE=$(find "$OUT" -name "verdict.txt" -type f 2>/dev/null | head -1)
+            if [ -n "$VERDICT_FILE" ] && grep -qai "confirmed" "$VERDICT_FILE" 2>/dev/null; then
                 VIOL_CONFIRMED=$((VIOL_CONFIRMED+1))
                 echo -e "${RED}✗ VIOLATION CONFIRMED ✓${NC}"
-                grep -i "Confirmed" "$OUT/$SAFE/verdict.txt" 2>/dev/null | head -3 | while read l; do echo "    $l"; done
+                grep -ai "Confirmed" "$VERDICT_FILE" 2>/dev/null | head -3 | while read l; do echo "    $l"; done
             else
                 echo -e "${YELLOW}○ not confirmed${NC}"
             fi
@@ -168,8 +164,8 @@ printf "  %-22s %8s %10s\n" "Target" "Crash" "Violation"
 printf "  %-22s %8s %10s\n" "----------------------" "--------" "----------"
 for target in "${IMAGES[@]}"; do
     [ "$TARGET_FILTER" != "all" ] && [ "$TARGET_FILTER" != "$target" ] && continue
-    C_OK=$(grep -rl "CRASH DETECTED" "$OUT_BASE/${target}_crash_"*/replay.log 2>/dev/null | wc -l || echo 0)
-    V_OK=$(find "$OUT_BASE" -path "*/${target}_viol_*/*/verdict.txt" -exec grep -li "Confirmed" {} \; 2>/dev/null | wc -l || echo 0)
+    C_OK=$(grep -ral "CRASH DETECTED" "$OUT_BASE/${target}_crash_"*/replay.log 2>/dev/null | wc -l || echo 0)
+    V_OK=$(find "$OUT_BASE" -path "*/${target}_viol_*/*/verdict.txt" -exec grep -ali "Confirmed" {} \; 2>/dev/null | wc -l || echo 0)
     C_TOTAL=$(find "$OUT_BASE" -maxdepth 1 -name "${target}_crash_*" -type d 2>/dev/null | wc -l || echo 0)
     V_TOTAL=$(find "$OUT_BASE" -maxdepth 1 -name "${target}_viol_*" -type d 2>/dev/null | wc -l || echo 0)
     printf "  %-22s %3d/%-3d %7d/%-3d\n" "$target" "$C_OK" "$C_TOTAL" "$V_OK" "$V_TOTAL"
