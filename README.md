@@ -62,7 +62,7 @@ reproduce/
 
 ## 漏洞概览
 
-| # | 目标 | 协议 | 崩溃 | 逻辑漏洞 | Docker复现 |
+| # | 目标 | 协议 | 崩溃 | 逻辑漏洞 | Docker复现(persistent) |
 |---|------|------|:---:|:---:|:---:|
 | 1 | **bftpd** 6.1 | FTP | 500 | 618 | ✅ 崩溃+逻辑 |
 | 2 | **exim** 4.96 | SMTP | 0 | 885 | ✅ 逻辑漏洞 |
@@ -70,21 +70,22 @@ reproduce/
 | 4 | **kamailio** 5.8.0 | SIP | 68 | 275 | ✅ 逻辑 / ⚠️崩溃需AFL |
 | 5 | **lightftp** v2.3 | FTP | 0 | 291 | ✅ 全部 |
 | 6 | **lighttpd1** 1.4.72 | HTTP | 0 | 124 | ✅ 全部 |
-| 7 | **live555** RTSP | RTSP | 72 | 298 | ✅ 逻辑 / ⚠️崩溃需AFL |
+| 7 | **live555** RTSP | RTSP | 72 | 298 | ✅ 全部(persistent) |
 | 8 | **mosquitto-v2.0.18** | MQTT | 0 | 749 | ✅ 全部 |
-| 9 | **proftpd** 1.3.9rc1 | FTP | 62 | 1,142 | ✅ 逻辑 / ⚠️崩溃需AFL |
+| 9 | **proftpd** 1.3.9rc1 | FTP | 62 | 1,142 | ✅ 全部(persistent) |
 | 10 | **pure-ftpd** 1.0.51 | FTP | 0 | 1,164 | ✅ 全部 |
 
-> ⚠️ = 崩溃依赖 AFL persistent-mode fork-server 堆状态，Docker standalone 不保证触发。种子在 AFLNet 中已验证为 replayable-crashes。
+> ⚠️(AFL) = 崩溃依赖 AFL persistent-mode fork-server 数千次迭代累积的内部状态，Docker 无法复现。种子在 AFLNet 中已验证为 replayable-crashes，可作 CVE 证据。
 
 ---
 
 ## 漏洞类型
 
-### 内存破坏 (741个, 4个目标)
-- Heap buffer overflow (CWE-122): bftpd, kamailio
-- Use-After-Free (CWE-416): proftpd, live555, forked-daapd
-- Stack buffer overflow (CWE-121): forked-daapd
+### 内存破坏 (741个, 5个目标)
+- Heap buffer overflow (CWE-122): bftpd ✅, kamailio ⚠️(AFL)
+- Use-After-Free (CWE-416): proftpd ✅, live555 ✅, forked-daapd ⚠️(AFL)
+- Stack buffer overflow (CWE-121): forked-daapd ⚠️(AFL)
+> ✅ = Docker persistent-mode可触发  ⚠️ = 需AFL persistent-mode (种子已存在于replayable-crashes/)
 
 ### 逻辑漏洞 (5,696个, 10个目标)
 

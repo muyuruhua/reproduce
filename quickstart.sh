@@ -73,9 +73,11 @@ echo "  输出目录: $OUT_BASE"
 mkdir -p "$OUT_BASE"
 
 
+# Crash targets (bftpd/proftpd/live555: Docker-reproducible via persistent replay)
+# kamailio/forked-daapd: seeds exist but need AFL persistent-mode (fundamental limit)
 declare -A HAS_CRASH=(
-    [bftpd]=1 [kamailio]=1 [proftpd]=1 [live555]=1 [forked-daapd]=1
-    [exim]=0 [lightftp]=0 [lighttpd1]=0 [mosquitto-v2.0.18]=0 [pure-ftpd]=0
+    [bftpd]=1 [proftpd]=1 [live555]=1
+    [kamailio]=0 [forked-daapd]=0 [exim]=0 [lightftp]=0 [lighttpd1]=0 [mosquitto-v2.0.18]=0 [pure-ftpd]=0
 )
 
 TOTAL_CRASH=0; CRASH_CONFIRMED=0; TOTAL_VIOL=0; VIOL_CONFIRMED=0
@@ -104,10 +106,10 @@ for target in "${IMAGES[@]}"; do
             echo -n "  Crash #$((i+1)): $(basename "$seed" | cut -c1-60)... "
             bash "$SCRIPT_DIR/scripts/replay_crash.sh" "$target" "$seed" "$OUT" >/dev/null 2>&1
 
-            if grep -aq "CRASH DETECTED" "$OUT/replay.log" 2>/dev/null; then
+            if grep -aq "CRASH_DETECTED\|CRASH DETECTED" "$OUT/replay.log" 2>/dev/null; then
                 CRASH_CONFIRMED=$((CRASH_CONFIRMED+1))
                 echo -e "${RED}✗ CRASH REPRODUCED ✓${NC}"
-                grep -a "CRASH DETECTED\|AddressSanitizer" "$OUT/replay.log" | head -2 | while read l; do echo "    $l"; done
+                grep -a "CRASH_DETECTED\|CRASH DETECTED\|AddressSanitizer" "$OUT/replay.log" | head -2 | while read l; do echo "    $l"; done
             else
                 echo -e "${YELLOW}○ not reproduced${NC}"
             fi
@@ -164,7 +166,7 @@ printf "  %-22s %8s %10s\n" "Target" "Crash" "Violation"
 printf "  %-22s %8s %10s\n" "----------------------" "--------" "----------"
 for target in "${IMAGES[@]}"; do
     [ "$TARGET_FILTER" != "all" ] && [ "$TARGET_FILTER" != "$target" ] && continue
-    C_OK=$(grep -ral "CRASH DETECTED" "$OUT_BASE/${target}_crash_"*/replay.log 2>/dev/null | wc -l || echo 0)
+    C_OK=$(grep -ral "CRASH_DETECTED\|CRASH DETECTED" "$OUT_BASE/${target}_crash_"*/replay.log 2>/dev/null | wc -l || echo 0)
     V_OK=$(find "$OUT_BASE" -path "*/${target}_viol_*/*/verdict.txt" -exec grep -ali "Confirmed" {} \; 2>/dev/null | wc -l || echo 0)
     C_TOTAL=$(find "$OUT_BASE" -maxdepth 1 -name "${target}_crash_*" -type d 2>/dev/null | wc -l || echo 0)
     V_TOTAL=$(find "$OUT_BASE" -maxdepth 1 -name "${target}_viol_*" -type d 2>/dev/null | wc -l || echo 0)
