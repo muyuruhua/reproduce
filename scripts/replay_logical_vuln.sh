@@ -29,7 +29,7 @@ TARGET_SERVER_CMD[pure-ftpd]="src/pure-ftpd -A"
 TARGET_PRE_START[pure-ftpd]="/home/ubuntu/experiments/clean 2>/dev/null; ulimit -n 1024"
 TARGET_ENV[pure-ftpd]="ASAN_OPTIONS=abort_on_error=1:symbolize=0:detect_leaks=0"
 TARGET_IS_UDP[pure-ftpd]="0"
-TARGET_HEALTH_CHECK[pure-ftpd]="nc -z 127.0.0.1 21"
+TARGET_HEALTH_CHECK[pure-ftpd]="sleep 2; netstat -tlnp 2>/dev/null | grep -q :21 || kill -0 \$SPID 2>/dev/null"
 
 # exim
 TARGET_IMAGE[exim]="exim"; TARGET_PROTO[exim]="SMTP"; TARGET_PORT[exim]="25"
@@ -66,7 +66,7 @@ TARGET_SERVER_CMD[bftpd]="./bftpd -D -c /home/ubuntu/experiments/basic.conf"
 TARGET_PRE_START[bftpd]=""
 TARGET_ENV[bftpd]="ASAN_OPTIONS=abort_on_error=1:symbolize=0:detect_leaks=0"
 TARGET_IS_UDP[bftpd]="0"
-TARGET_HEALTH_CHECK[bftpd]="sleep 2; kill -0 \$SPID 2>/dev/null"
+TARGET_HEALTH_CHECK[bftpd]="sleep 2; netstat -tlnp 2>/dev/null | grep -q :21 || kill -0 \$SPID 2>/dev/null"
 
 # ── proftpd ──
 TARGET_IMAGE[proftpd]="proftpd"; TARGET_PROTO[proftpd]="FTP"; TARGET_PORT[proftpd]="21"
@@ -619,11 +619,12 @@ LISTEN=0
 for attempt in \$(seq 1 50); do
     sleep 0.1
     if [ \"\$REPLAY_TARGET\" = \"lightftp\" ]; then sleep 1; LISTEN=1; break; fi
-    # bftpd/proftpd ASAN build crashes when nc -z connects then disconnects;
+    # bftpd/proftpd/pure-ftpd ASAN build crashes when nc -z connects then disconnects;
     # use process-alive check instead of port-connect health check
-    if [ \"\$REPLAY_TARGET\" = \"proftpd\" ] || [ \"\$REPLAY_TARGET\" = \"bftpd\" ]; then
-        sleep 2
-        if kill -0 \$SPID 2>/dev/null; then LISTEN=1; break; fi
+    if [ \"\$REPLAY_TARGET\" = \"proftpd\" ] || [ \"\$REPLAY_TARGET\" = \"bftpd\" ] || [ \"\$REPLAY_TARGET\" = \"pure-ftpd\" ]; then
+        sleep 4
+        if kill -0 \$SPID 2>/dev/null; then LISTEN=1; fi
+        break
     fi
     if nc -z 127.0.0.1 $PORT 2>/dev/null; then LISTEN=1; break; fi
     if ! kill -0 \$SPID 2>/dev/null; then
