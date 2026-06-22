@@ -221,7 +221,7 @@ if [ "$VTYPE" = "crash" ]; then
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    if grep -aq "CRASH DETECTED\|CRASH CONFIRMED" "$OUT_DIR/replay_output/replay.log" 2>/dev/null; then
+    if grep -aq "CRASH_DETECTED\|CRASH DETECTED\|CRASH CONFIRMED" "$OUT_DIR/replay_output/replay.log" 2>/dev/null; then
         echo "  ✅ CRASH REPRODUCED — 内存破坏漏洞已独立复现!"
         grep -a "CRASH DETECTED\|AddressSanitizer" "$OUT_DIR/replay_output/replay.log" | head -5
         echo ""

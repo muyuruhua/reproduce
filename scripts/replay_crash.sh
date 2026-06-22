@@ -119,70 +119,35 @@ while off+4<=len(d):
 print(f'Total: {mi} messages')
 " | tee "$OUT_DIR/seed_structure.txt"
 
-# ── Step 2: Replay via aflnet-replay (with server restart per replay) ──
-# FIX: Each replay restarts the server to faithfully simulate AFL fuzzer conditions
-# where the target is restarted between iterations. This is essential for
-# reproducing ASAN-detected crashes that depend on initial heap state.
-echo ""; echo "--- Replaying via aflnet-replay (128 attempts, server restart per attempt) ---"
+# ── Step 2: Replay via aflnet-replay ──
+# Uses dual-mode persistent+restart replay script mounted into container.
+# This avoids complex heredoc escaping issues.
+
+echo ""; echo "--- Replaying via aflnet-replay (persistent + restart, 256 total attempts) ---"
 
 REPLAY_LOG="$OUT_DIR/replay.log"
 CRASH_FOUND=0
 
+# Copy the internal replay script alongside the seed
+INTERNAL_SCRIPT="$OUT_DIR/_crash_replay.sh"
+cp "$(dirname "$0")/_crash_replay_persistent.sh" "$INTERNAL_SCRIPT"
+chmod +x "$INTERNAL_SCRIPT"
+
 docker run --rm --network host --cap-add SYS_PTRACE \
     -v "$(realpath "$SAFE_COPY"):/tmp/crash_seed:ro" \
+    -v "$(realpath "$INTERNAL_SCRIPT"):/tmp/_replay.sh:ro" \
     -e "${ENV[$TARGET]}" \
-    "${IMG[$TARGET]}" /bin/bash -c "
-cd ${WD[$TARGET]}
-export ${ENV[$TARGET]}
+    "${IMG[$TARGET]}" /bin/bash /tmp/_replay.sh \
+        /tmp/crash_seed \
+        "${PROTO[$TARGET]}" \
+        "${PORT[$TARGET]}" \
+        "${WD[$TARGET]}" \
+        "${PRE[$TARGET]}" \
+        "${CMD[$TARGET]}" \
+        "${HC[$TARGET]}" \
+    2>&1 | tee "$REPLAY_LOG"
 
-for rep in \$(seq 1 128); do
-    # --- Restart server for each replay (simulates AFL fuzzer restart cycle) ---
-    ${PRE[$TARGET]}
-    ${CMD[$TARGET]} &
-    SPID=\$!
-
-    # Wait for server to be ready
-    READY=0
-    for a in \$(seq 1 30); do
-        if ${HC[$TARGET]} 2>/dev/null; then READY=1; break; fi
-        if ! kill -0 \$SPID 2>/dev/null; then
-            wait \$SPID 2>/dev/null
-            echo \"[WARN] replay #\$rep: server died on startup (exit=\$?), retrying...\"
-            break
-        fi
-        sleep 0.5
-    done
-
-    if [ \$READY -eq 0 ]; then
-        kill \$SPID 2>/dev/null || true
-        wait \$SPID 2>/dev/null || true
-        sleep 1
-        continue
-    fi
-
-    # --- Replay the seed ---
-    /home/ubuntu/chatafl-opt/aflnet-replay /tmp/crash_seed ${PROTO[$TARGET]} ${PORT[$TARGET]} 0 2>&1 || true
-
-    # --- Check if server crashed ---
-    if ! kill -0 \$SPID 2>/dev/null; then
-        wait \$SPID 2>/dev/null
-        EC=\$?
-        echo \"[CRASH DETECTED] replay #\$rep: server crashed! exit_code=\$EC\"
-        [ \$EC -gt 128 ] && echo \"[CRASH] Signal \$((\$EC - 128)) = \$(kill -l \$((\$EC - 128)) 2>/dev/null || echo 'UNKNOWN')\"
-        exit 0
-    fi
-
-    # --- Clean stop server for next restart ---
-    kill \$SPID 2>/dev/null || true
-    wait \$SPID 2>/dev/null || true
-    sleep 0.2
-done
-
-echo '[INFO] Server survived 128 replays (with restart). Crash NOT reproduced in standalone mode.'
-echo '[INFO] This seed likely requires specific fuzzer-internal state not replicable in standalone replay.'
-" 2>&1 | tee "$REPLAY_LOG"
-
-if grep -q "CRASH DETECTED" "$REPLAY_LOG" 2>/dev/null; then
+if grep -aq "CRASH_DETECTED\|CRASH DETECTED" "$REPLAY_LOG" 2>/dev/null; then
     CRASH_FOUND=1
 fi
 
