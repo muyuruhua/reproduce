@@ -219,6 +219,68 @@ def replay_tcp(req_data):
     sock.close()
     return b'\n---\n'.join(all_resp), []
 
+def mqtt_remaining_length(data, offset):
+    """Decode MQTT variable-length remaining length field. Returns (value, bytes_consumed)."""
+    val = 0; shift = 0
+    for i in range(4):
+        if offset + i >= len(data): return -1, 0
+        b = data[offset + i]
+        val |= (b & 0x7f) << shift
+        shift += 7
+        if not (b & 0x80):
+            return val, i + 1
+    return -1, 0
+
+def replay_mqtt_binary(req_data):
+    """MQTT: parse raw MQTT binary packets, send each over TCP, collect responses."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(5)
+    try:
+        sock.connect(('127.0.0.1', PORT))
+    except Exception as e:
+        log(f'[FATAL] MQTT connect failed: {e}')
+        return b'', [f'CONNECT_FAILED: {e}']
+    sock.settimeout(0.5)
+    all_resp = []; errors = []; offset = 0; pkt_idx = 0
+    type_names = {1:'CONNECT',2:'CONNACK',3:'PUBLISH',4:'PUBACK',5:'PUBREC',6:'PUBREL',7:'PUBCOMP',
+                  8:'SUBSCRIBE',9:'SUBACK',10:'UNSUBSCRIBE',11:'UNSUBACK',12:'PINGREQ',13:'PINGRESP',14:'DISCONNECT'}
+
+    # MQTT broker requires CONNECT first — prepend a minimal one
+    # MQTT CONNECT: 0x10 + remaining_len + "MQTT"(4) + level(4) + flags(0x02=clean_session) + keepalive(60) + clientID(len=0)
+    connect = b'\x10\x0c\x00\x04MQTT\x04\x02\x00\x3c\x00\x00'
+    try:
+        sock.sendall(connect); time.sleep(0.3)
+        r = recv_all(sock, timeout=3.0)
+        if r: all_resp.append(r); connack_code = r[3] if len(r) > 3 else -1
+        log(f'  [CONNECT] → CONNACK (code={connack_code if r else "timeout"})')
+        if not r or (len(r) > 3 and r[3] != 0):
+            log(f'  [WARN] CONNECT rejected — broker may require specific config')
+    except Exception as e:
+        errors.append(f'CONNECT: {e}')
+
+    while offset < len(req_data):
+        if offset + 2 > len(req_data): break
+        pkt_type = req_data[offset] >> 4
+        rem_len, rl_bytes = mqtt_remaining_length(req_data, offset + 1)
+        if rem_len < 0 or rl_bytes == 0:
+            log(f'  [BAD] Cannot parse MQTT header at offset {offset}: {req_data[offset:offset+5].hex()}')
+            offset += 1; continue
+        pkt_end = offset + 1 + rl_bytes + rem_len
+        if pkt_end > len(req_data):
+            log(f'  [TRUNC] MQTT packet at offset {offset}: need {pkt_end} bytes, have {len(req_data)}')
+            break
+        pkt = req_data[offset:pkt_end]; offset = pkt_end; pkt_idx += 1
+        tname = type_names.get(pkt_type, f'0x{pkt_type:x}')
+        try:
+            sock.sendall(pkt); time.sleep(0.1)
+            r = recv_all(sock, timeout=1.0)
+            if r: all_resp.append(r)
+            log(f'  [{pkt_idx}] {tname} {len(pkt)}B  → {len(r) if r else 0}B response')
+        except Exception as e:
+            errors.append(f'MQTT[{pkt_idx}]: {e}'); break
+    sock.close()
+    return b'\n---\n'.join(all_resp), errors
+
 def replay_udp(req_data):
     """UDP: parse 4-byte uint32 LE size-prefix, send each as datagram."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -252,6 +314,7 @@ if not os.path.exists(REQ_FILE): log(f'[WARN] No request file'); sys.exit(0)
 with open(REQ_FILE, 'rb') as f: req_data = f.read()
 log(f'Req: {len(req_data)}B, proto={PROTO}, UDP={IS_UDP}')
 if IS_UDP == '1': all_resp, errors = replay_udp(req_data)
+elif PROTO == 'MQTT': all_resp, errors = replay_mqtt_binary(req_data)
 else: all_resp, errors = replay_tcp(req_data)
 with open(RESP_FILE, 'wb') as f: f.write(all_resp)
 with open(VERDICT_FILE, 'w') as f:
@@ -410,34 +473,108 @@ def verify_rtsp(req, resp):
     return findings
 
 
+def _mqtt_remlen(data, offset):
+    val = 0; shift = 0
+    for i in range(4):
+        if offset + i >= len(data): return -1, 0
+        b = data[offset + i]; val |= (b & 0x7f) << shift; shift += 7
+        if not (b & 0x80): return val, i + 1
+    return -1, 0
+
 def verify_mqtt(req, resp):
-    """MQTT: check $SYS ACL bypass, empty ClientID, retained flood, will $SYS"""
+    """MQTT: analyze binary MQTT packets for protocol violations."""
     findings = []
-    req_text = req.decode("latin-1", errors="replace")
-    resp_text = resp.decode("latin-1", errors="replace")
-    # $SYS ACL bypass: PUBLISH or SUBSCRIBE to $SYS topics
-    if "$SYS" in req_text:
-        findings.append({"sev":"HIGH","cat":"ACL_BYPASS","cwe":"CWE-284","desc":"Access to $SYS topic attempted","cve":"N/A (CVE-2017-7650 pattern)"})
-    # Empty ClientID with clean_session=0 (session hijack)
-    if "clean_session=0" in req_text.lower() or "cleansessionfalse" in req_text.lower():
-        if "clientid=" in req_text.lower() and len(req) < 100:
-            findings.append({"sev":"HIGH","cat":"SESSION_HIJACK","cwe":"CWE-384","desc":"Potential empty ClientID with persistent session","cve":"CVE-2014-6116"})
-    # Retained message flood (>5 retained topics)
-    retain_count = req_text.count("retain")
-    if retain_count > 5:
-        findings.append({"sev":"MEDIUM","cat":"RESOURCE_EXHAUSTION","cwe":"CWE-400","desc":f"Retained message flood ({retain_count} retained topics)","cve":"CVE-2023-3592"})
-    # Will message targeting $SYS
-    if "Will" in req_text and "$SYS" in req_text:
-        findings.append({"sev":"CRITICAL","cat":"PRIVILEGE_ESCALATION","cwe":"CWE-250","desc":"Will message targets $SYS system topic","cve":"N/A"})
-    # Zero-length topic filter
-    if len(req) < 200 and "\x00\x00\x00" in str(req[:50]):
-        findings.append({"sev":"HIGH","cat":"NULL_DEREF_RISK","cwe":"CWE-476","desc":"Potential zero-length topic filter","cve":"CVE-2019-5432"})
-    # Duplicate packet identifier
-    if req_text.count("packet_id") > 1:
-        findings.append({"sev":"MEDIUM","cat":"REPLAY_ATTACK","cwe":"CWE-346","desc":"Duplicate packet identifier detected","cve":"N/A"})
-    # $SYS data in response (info leak)
-    if resp_text.count("$SYS/broker/") > 3:
-        findings.append({"sev":"HIGH","cat":"INFO_LEAK","cwe":"CWE-200","desc":f"$SYS system data leaked in response ({resp_text.count(chr(36)+chr(83)+chr(89)+chr(83))} topics)","cve":"N/A"})
+    offset = 0
+    pkt_idx = 0
+    topics_found = []
+    while offset < len(req):
+        if offset + 2 > len(req): break
+        pkt_type = req[offset] >> 4
+        rem_len, rl_bytes = _mqtt_remlen(req, offset + 1)
+        if rem_len < 0 or rl_bytes == 0: break
+        pkt_end = offset + 1 + rl_bytes + rem_len
+        if pkt_end > len(req): break
+        pkt = req[offset:pkt_end]; offset = pkt_end; pkt_idx += 1
+
+        # Extract topic strings from SUBSCRIBE/PUBLISH packets
+        if pkt_type in (3, 8) and rem_len > 2 + rl_bytes:
+            # Skip variable header: packet ID (2 bytes for QoS>0 in SUBSCRIBE)
+            payload_start = 1 + rl_bytes
+            if pkt_type == 8:  # SUBSCRIBE has 2-byte packet ID
+                payload_start += 2
+            if pkt_type == 3 and (pkt[0] & 0x06):  # PUBLISH with QoS>0 has packet ID
+                payload_start += 2
+            if payload_start < len(pkt):
+                topic_len = struct.unpack('!H', pkt[payload_start:payload_start+2])[0]
+                if payload_start + 2 + topic_len <= len(pkt):
+                    topic = pkt[payload_start+2:payload_start+2+topic_len]
+                    try: topic_str = topic.decode('ascii', errors='replace')
+                    except: topic_str = str(topic)
+                    topics_found.append(topic_str)
+                    if '$SYS' in topic_str:
+                        findings.append({"sev":"HIGH","cat":"ACL_BYPASS","cwe":"CWE-284",
+                            "desc":f"SUBSCRIBE/PUBLISH to protected topic: {topic_str}",
+                            "cve":"N/A (CVE-2017-7650 pattern)"})
+
+        # CONNECT packet (type 1): check clean session, will flag, client ID
+        if pkt_type == 1:
+            var_start = 1 + rl_bytes
+            if var_start + 10 <= len(pkt):
+                # Check protocol name
+                proto_len = struct.unpack('!H', pkt[var_start:var_start+2])[0]
+                proto_name = pkt[var_start+2:var_start+2+proto_len]
+                var_start += 2 + proto_len
+                if var_start < len(pkt):
+                    proto_level = pkt[var_start]; var_start += 1
+                    if var_start < len(pkt):
+                        connect_flags = pkt[var_start]; var_start += 1
+                        clean_session = (connect_flags & 0x02)
+                        will_flag = (connect_flags & 0x04)
+                        if var_start + 2 <= len(pkt):
+                            keepalive = struct.unpack('!H', pkt[var_start:var_start+2])[0]
+                            var_start += 2
+                        # Client ID
+                        if var_start + 2 <= len(pkt):
+                            cid_len = struct.unpack('!H', pkt[var_start:var_start+2])[0]
+                            cid = pkt[var_start+2:var_start+2+cid_len]
+                            var_start += 2 + cid_len
+                            if cid_len == 0 and not clean_session:
+                                findings.append({"sev":"HIGH","cat":"SESSION_HIJACK","cwe":"CWE-384",
+                                    "desc":"Empty ClientID with clean_session=0 (persistent session hijack)",
+                                    "cve":"CVE-2014-6116"})
+                            if cid_len == 0:
+                                findings.append({"sev":"INFO","cat":"SESSION_COLLISION","cwe":"CWE-384",
+                                    "desc":"Empty ClientID — multiple connections may collide",
+                                    "cve":"N/A (MQTT protocol pattern)"})
+                            # Check Will topic
+                            if will_flag and var_start + 2 <= len(pkt):
+                                will_topic_len = struct.unpack('!H', pkt[var_start:var_start+2])[0]
+                                if var_start + 2 + will_topic_len <= len(pkt):
+                                    will_topic = pkt[var_start+2:var_start+2+will_topic_len]
+                                    try: will_topic_str = will_topic.decode('ascii')
+                                    except: will_topic_str = str(will_topic)
+                                    if '$SYS' in will_topic_str:
+                                        findings.append({"sev":"CRITICAL","cat":"PRIVILEGE_ESCALATION","cwe":"CWE-250",
+                                            "desc":f"Will message targets $SYS topic: {will_topic_str}",
+                                            "cve":"N/A (NEW — no known CVE)"})
+
+    # SUBACK response analysis
+    resp_text = resp.decode('latin-1', errors='replace')
+    if resp_text.count('$SYS') > 3:
+        findings.append({"sev":"HIGH","cat":"INFO_LEAK","cwe":"CWE-200",
+            "desc":"$SYS system data leaked in response","cve":"N/A"})
+
+    if topics_found:
+        findings.append({"sev":"INFO","cat":"MQTT_TOPICS","cwe":"N/A",
+            "desc":f"MQTT topics accessed: {', '.join(set(topics_found[:10]))}","cve":"N/A"})
+
+    if not findings:
+        # Fallback: check raw bytes for known patterns
+        req_text = req.decode('latin-1', errors='replace')
+        if "$SYS" in req_text:
+            findings.append({"sev":"HIGH","cat":"ACL_BYPASS","cwe":"CWE-284",
+                "desc":"Access to $SYS topic attempted","cve":"N/A"})
+
     return findings
 def verify_sip(req, resp):
     findings = []; invite_seen = False; via_count = 0
