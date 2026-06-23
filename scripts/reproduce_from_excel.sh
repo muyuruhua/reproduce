@@ -255,12 +255,37 @@ if [ "$VTYPE" = "crash" ]; then
     fi
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 else
-    bash "$SCRIPT_DIR/replay_logical_vuln.sh" "$TARGET" "$EXTRACTED" "$OUT_DIR/replay_output"
+    # ── Violation replay with seed retry ──
+    # If first seed doesn't trigger, try up to 3 more from other tarballs
+    SEED_OK=0
+    SEED_LIST="$EXTRACTED"
+    # Collect up to 3 backup seeds from other tarballs
+    EXTRA_COUNT=0
+    for BTAR in $(ls -v "$RESULTS_DIR"/out-*-chatafl_opt_*.tar.gz 2>/dev/null); do
+        [ "$BTAR" = "$SELECTED_TAR" ] && continue
+        [ $EXTRA_COUNT -ge 3 ] && break
+        BSEED=$(tar tzf "$BTAR" 2>/dev/null | grep "replayable-violations/" | grep -v "README\|/$" | grep "cat[:=]${CAT_NUM}" | shuf -n1)
+        if [ -n "$BSEED" ]; then
+            rm -rf "$OUT_DIR/backup_$EXTRA_COUNT"; mkdir -p "$OUT_DIR/backup_$EXTRA_COUNT"
+            tar xzf "$BTAR" -C "$OUT_DIR/backup_$EXTRA_COUNT" "$BSEED" 2>/dev/null
+            SEED_LIST="$SEED_LIST $OUT_DIR/backup_$EXTRA_COUNT/$BSEED"
+            EXTRA_COUNT=$((EXTRA_COUNT+1))
+        fi
+    done
+
+    for SEED_FILE in $SEED_LIST; do
+        [ -f "$SEED_FILE" ] || continue
+        bash "$SCRIPT_DIR/replay_logical_vuln.sh" "$TARGET" "$SEED_FILE" "$OUT_DIR/replay_output"
+        if find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -ali "[1-9][0-9]* violation(s) confirmed" {} \; 2>/dev/null | grep -q .; then
+            SEED_OK=1
+            break
+        fi
+        [ "$SEED_FILE" != "$EXTRACTED" ] && echo "    首个种子未触发，已自动换种子重试..."
+    done
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    CONFIRMED_LINES=$(find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -ali "[1-9][0-9]* violation(s) confirmed" {} \; 2>/dev/null | wc -l)
-    if [ "$CONFIRMED_LINES" -gt 0 ] 2>/dev/null; then
+    if [ $SEED_OK -eq 1 ]; then
         echo "  ✅ VIOLATION CONFIRMED — 逻辑漏洞已独立复现!"
         find "$OUT_DIR/replay_output" -name "verdict.txt" -exec grep -aH "Severity\|CWE\|Description" {} \; 2>/dev/null | head -30
         echo ""
