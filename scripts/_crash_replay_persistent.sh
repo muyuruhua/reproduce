@@ -9,7 +9,7 @@ cd "$WORKDIR"
 export ASAN_OPTIONS="abort_on_error=1:symbolize=0:detect_leaks=0:detect_stack_use_after_return=1"
 
 # Extract crash signal from seed filename e.g. "id:000009,sig:06,..."  → SIGABRT(6)
-SIG_RAW=$(echo "$SEED_ORIG_NAME" | grep -oP 'sig[:=]\K\d+' | head -1 || echo "?")
+SIG_RAW=$(echo "$SEED_ORIG_NAME" | grep -oP 'sig[_:]\K\d+' | head -1 || echo "?")
 SIG_NUM=$((10#${SIG_RAW} + 0)) 2>/dev/null || SIG_NUM="$SIG_RAW"
 case "$SIG_NUM" in
     6)  SIG_NAME="SIGABRT(6) — ASAN detected memory error" ;;
