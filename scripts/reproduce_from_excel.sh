@@ -110,7 +110,7 @@ if [ "$CAT_HEX" != "any" ] && [ "$VTYPE" = "viol" ]; then
     CAT_BITS=$(cat_bits "$CAT_NUM")
 fi
 
-FOUND=0; SELECTED_TAR=""; SELECTED_SEED=""; BEST_SCORE=0
+FOUND=0; SELECTED_TAR=""; SELECTED_SEED=""; BEST_SCORE=0; EXACT_FOUND=0
 declare -A SEEN_SEEDS  # dedup by seed filename
 
 for TAR in $(ls -v "$RESULTS_DIR"/out-*-chatafl_opt_*.tar.gz 2>/dev/null); do
@@ -155,10 +155,12 @@ for TAR in $(ls -v "$RESULTS_DIR"/out-*-chatafl_opt_*.tar.gz 2>/dev/null); do
             continue
         fi
 
-        # Exact match: highest priority (keep FIRST match = earliest tarball = best quality)
+        # Exact match: always wins over fuzzy (keep FIRST exact = earliest tarball)
         if [ "$(echo "$seed_cat" | tr 'a-f' 'A-F')" = "$(echo "$CAT_NUM" | tr 'a-f' 'A-F')" ]; then
             FOUND=$((FOUND+1))
-            [ $FOUND -eq 1 ] && { SELECTED_TAR="$TAR"; SELECTED_SEED="$line"; BEST_SCORE=999; }
+            if [ $EXACT_FOUND -eq 0 ]; then
+                SELECTED_TAR="$TAR"; SELECTED_SEED="$line"; BEST_SCORE=999; EXACT_FOUND=1
+            fi
             echo "  [精确匹配] $TAR_NAME → $line"
             continue
         fi
